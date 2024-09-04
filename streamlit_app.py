@@ -1,28 +1,32 @@
 import streamlit as st
-from openai import OpenAI
+import openai
+import fitz  # PyMuPDF for reading PDF files
+
+# Function to read PDF files
+def read_pdf(file):
+    doc = fitz.open(stream=file.read(), filetype="pdf")
+    text = ""
+    for page in doc:
+        text += page.get_text()
+    return text
 
 # Show title and description.
-st.title("📄 Document question answering")
+st.title("📄 Document question answering (HW1)")
 st.write(
-    "Upload a document below and ask a question about it – GPT will answer! "
-    "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys). "
+    "Upload a .txt or .pdf document below and ask a question about it – GPT will answer! "
+    "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys)."
 )
 
 # Ask user for their OpenAI API key via `st.text_input`.
-# Alternatively, you can store the API key in `./.streamlit/secrets.toml` and access it
-# via `st.secrets`, see https://docs.streamlit.io/develop/concepts/connections/secrets-management
 openai_api_key = st.text_input("OpenAI API Key", type="password")
 if not openai_api_key:
     st.info("Please add your OpenAI API key to continue.", icon="🗝️")
 else:
-
-    # Create an OpenAI client.
-    client = OpenAI(api_key=openai_api_key)
+    # Create an OpenAI client
+    openai.api_key = openai_api_key
 
     # Let the user upload a file via `st.file_uploader`.
-    uploaded_file = st.file_uploader(
-        "Upload a document (.txt or .md)", type=("txt", "md")
-    )
+    uploaded_file = st.file_uploader("Upload a document (.txt or .pdf)", type=("txt", "pdf"))
 
     # Ask the user for a question via `st.text_area`.
     question = st.text_area(
@@ -32,9 +36,17 @@ else:
     )
 
     if uploaded_file and question:
-
         # Process the uploaded file and question.
-        document = uploaded_file.read().decode()
+        file_extension = uploaded_file.name.split('.')[-1].lower()
+        if file_extension == 'txt':
+            document = uploaded_file.read().decode('utf-8')
+        elif file_extension == 'pdf':
+            document = read_pdf(uploaded_file)
+        else:
+            st.error("Unsupported file type.")
+            st.stop()  # Stop further execution if the file type is invalid
+
+        # Use OpenAI API to answer the question about the document
         messages = [
             {
                 "role": "user",
@@ -42,12 +54,21 @@ else:
             }
         ]
 
-        # Generate an answer using the OpenAI API.
-        stream = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=messages,
-            stream=True,
-        )
+        try:
+            # Generate an answer using the OpenAI API.
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",  # Use GPT-4 if you have access
+                messages=messages
+            )
 
-        # Stream the response to the app using `st.write_stream`.
-        st.write_stream(stream)
+            # Display the result
+            answer = response['choices'][0]['message']['content']
+            st.write("### Answer:")
+            st.write(answer)
+
+        except Exception as e:
+            st.error(f"An error occurred: {str(e)}")
+
+    # If the file is removed, stop accessing the data
+    if not uploaded_file:
+        st.warning("No file uploaded yet or file removed. Upload a file to continue.")
