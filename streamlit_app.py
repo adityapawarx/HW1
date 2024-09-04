@@ -22,7 +22,7 @@ openai_api_key = st.text_input("OpenAI API Key", type="password")
 if not openai_api_key:
     st.info("Please add your OpenAI API key to continue.", icon="🗝️")
 else:
-    # Create an OpenAI client
+    # Set the OpenAI API key
     openai.api_key = openai_api_key
 
     # Let the user upload a file via `st.file_uploader`.
@@ -46,18 +46,22 @@ else:
             st.error("Unsupported file type.")
             st.stop()  # Stop further execution if the file type is invalid
 
-        # Use OpenAI API to answer the question about the document
+        # Prepare the messages for the ChatCompletion
         messages = [
             {
+                "role": "system",
+                "content": "You are a helpful assistant."
+            },
+            {
                 "role": "user",
-                "content": f"Here's a document: {document} \n\n---\n\n {question}",
+                "content": f"Here's a document: {document}\n\n---\n\n{question}"
             }
         ]
 
         try:
-            # Generate an answer using the OpenAI API.
-            response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",  # Use GPT-4 if you have access
+            # Generate an answer using the OpenAI API with the new method
+            response = openai.chat_completions.create(
+                model="gpt-3.5-turbo",  # You can use GPT-4 if you have access
                 messages=messages
             )
 
