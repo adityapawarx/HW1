@@ -59,8 +59,8 @@ else:
         ]
 
         try:
-            # Generate an answer using the OpenAI API with the new method
-            response = openai.chat_completions.create(
+            # Generate an answer using the OpenAI API with the correct method
+            response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",  # You can use GPT-4 if you have access
                 messages=messages
             )
