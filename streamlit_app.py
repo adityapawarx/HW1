@@ -31,7 +31,7 @@ if openai_api_key:
         st.stop()
 else:
     st.info("Please add your OpenAI API key to continue.", icon="🗝️")
-    st.stop()
+    st.stop()   
 
 uploaded_file = st.file_uploader(
     "Upload a document (.txt or .pdf)", type=("txt", "pdf")
